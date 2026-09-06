@@ -23,9 +23,9 @@ type IncomeClient struct {
 type IncomeClientType string
 
 var (
-	// Физическому лицу
+	// Individual person.
 	IncomeClientTypeFromIndividual IncomeClientType = "FROM_INDIVIDUAL"
-	// Юридическому лицу. Необходимо указать INN и DisplayName
+	// Legal Entity (company). Require to set INN and DisplayName.
 	IncomeClientTypeFromLegalEntity IncomeClientType = "FROM_LEGAL_ENTITY"
 )
 

@@ -27,7 +27,7 @@ type Client struct {
 	mu *sync.RWMutex
 }
 
-// New creates new instance of [Client]. Use options to change baseURL and another settings
+// New creates new instance of [Client]. Use options to change baseURL and another settings.
 func New(inn, password string, opts ...Option) *Client {
 	o := newOptions()
 
@@ -55,6 +55,7 @@ func New(inn, password string, opts ...Option) *Client {
 	}
 }
 
+// INN returns inn provided in [New].
 func (c *Client) INN() string {
 	c.mu.RLock()
 	inn := c.inn
@@ -63,6 +64,7 @@ func (c *Client) INN() string {
 	return inn
 }
 
+// DeviceInfo returns [DeviceInfo]. It stores generated deviceID.
 func (c *Client) DeviceInfo() DeviceInfo {
 	c.mu.RLock()
 	deviceInfo := c.deviceInfo
@@ -95,6 +97,7 @@ func (c *Client) RefreshToken() string {
 	return refreshToken
 }
 
+// Login requests tokens using inn, password and [DeviceInfo].
 func (c *Client) Login(ctx context.Context) (LoginResponse, error) {
 	const op = "lknpd.Client.Login"
 
@@ -166,6 +169,7 @@ func (c *Client) CancelIncome(ctx context.Context, receiptUUID string, comment C
 	return nil
 }
 
+// Request executes HTTP request and returns response body (use generic type).
 func (c *Client) Request[T any](ctx context.Context, path, method string, body any) (T, error) {
 	const op = "lknpd.Client.Request"
 
@@ -226,6 +230,7 @@ func (c *Client) Request[T any](ctx context.Context, path, method string, body a
 	return responseValue, nil
 }
 
+// RequestWithAuth trying to login if refresh token is empty, then trying to refresh tokens if token is expired, after executes HTTP request and returns response body (use generic type).
 func (c *Client) RequestWithAuth[T any](ctx context.Context, path, method string, body any) (T, error) {
 	var zero T
 
@@ -253,6 +258,7 @@ func (c *Client) RequestWithAuth[T any](ctx context.Context, path, method string
 	return c.Request[T](ctx, path, method, body)
 }
 
+// Refresh executes HTTP request to refresh tokens.
 func (c *Client) Refresh(ctx context.Context) error {
 	const op = "lknpd.Client.Refresh"
 

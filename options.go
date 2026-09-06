@@ -26,12 +26,13 @@ func newOptions() options {
 	return options{
 		appVersion: defaultAppVersion,
 		sourceType: defaultAppVersion,
-		deviceID:   generateDeviceID(),
+		deviceID:   GenerateDeviceID(),
 		userAgent:  defaultUserAgent,
 		baseURL:    defaultBaseURL,
 	}
 }
 
+// Default value: "1.0.0"
 func WithAppVersion(appVersion string) Option {
 	return func(o options) options {
 		o.appVersion = appVersion
@@ -39,6 +40,7 @@ func WithAppVersion(appVersion string) Option {
 	}
 }
 
+// Default value: "WEB"
 func WithSourceType(sourceType string) Option {
 	return func(o options) options {
 		o.sourceType = sourceType
@@ -46,6 +48,7 @@ func WithSourceType(sourceType string) Option {
 	}
 }
 
+// Default value: generated string using [GenerateDeviceID].
 func WithDeviceID(deviceID string) Option {
 	return func(o options) options {
 		o.deviceID = deviceID
@@ -53,6 +56,7 @@ func WithDeviceID(deviceID string) Option {
 	}
 }
 
+// Default value: generated string using [GenerateDeviceID].
 func WithUserAgent(userAgent string) Option {
 	return func(o options) options {
 		o.userAgent = userAgent
@@ -60,6 +64,7 @@ func WithUserAgent(userAgent string) Option {
 	}
 }
 
+// Default value: "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/152.0.0.0 Safari/537.36"
 func WithBaseURL(baseURL string) Option {
 	return func(o options) options {
 		o.baseURL = baseURL
@@ -67,6 +72,7 @@ func WithBaseURL(baseURL string) Option {
 	}
 }
 
+// Default value: empty. Use login to get tokens (inn and password are required).
 func WithTokens(token, refreshToken string, tokenExpiresIn time.Time) Option {
 	return func(o options) options {
 		o.token = token

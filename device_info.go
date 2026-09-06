@@ -7,6 +7,7 @@ const (
 	deviceIDCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
 
+// DeviceInfo is used to identify your device in lknpd.
 type DeviceInfo struct {
 	AppVersion     string      `json:"appVersion"`
 	SourceDeviceID string      `json:"sourceDeviceId"`
@@ -18,7 +19,7 @@ type MetaDetails struct {
 	UserAgent string `json:"userAgent"`
 }
 
-func generateDeviceID() string {
+func GenerateDeviceID() string {
 	b := make([]byte, deviceIDLength)
 	for i := range b {
 		b[i] = deviceIDCharset[rand.N(len(deviceIDCharset))]

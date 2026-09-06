@@ -72,11 +72,11 @@ func (c *Client) Login(ctx context.Context, inn, password string) (LoginResponse
 	return resp, nil
 }
 
-func (c *Client) CreateIncomes(ctx context.Context, client IncomeClient, incomes []Income, date time.Time) (string, error) {
-	const op = "lknpd.Client.CreateIncomes"
+func (c *Client) CreateIncome(ctx context.Context, client IncomeClient, services []Income, date time.Time) (string, error) {
+	const op = "lknpd.Client.CreateIncome"
 
 	total := .0
-	for _, income := range incomes {
+	for _, income := range services {
 		total += income.Amount * float64(income.Quantity)
 	}
 
@@ -86,7 +86,7 @@ func (c *Client) CreateIncomes(ctx context.Context, client IncomeClient, incomes
 		OperationTime:                    date,
 		PaymentType:                      defaultPaymentType,
 		RequestTime:                      time.Now(),
-		Services:                         incomes,
+		Services:                         services,
 		TotalAmount:                      fmt.Sprintf("%.2f", total),
 	}
 

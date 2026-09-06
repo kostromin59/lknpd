@@ -123,6 +123,7 @@ func (c *Client) Login(ctx context.Context) (LoginResponse, error) {
 	return resp, nil
 }
 
+// CreateIncome creates income and returns ApprovedReceiptUUID.
 func (c *Client) CreateIncome(ctx context.Context, client IncomeClient, services []Income, date time.Time) (string, error) {
 	const op = "lknpd.Client.CreateIncome"
 

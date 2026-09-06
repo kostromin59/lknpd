@@ -1,28 +1,28 @@
 package lknpd
 
+import "math/rand/v2"
+
 const (
-	defaultAppVersion = "1.0.0"
-	defaultSourceType = "WEB"
+	deviceIDLength  = 21
+	deviceIDCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
 )
 
-type DeviceInfoRequest struct {
-	AppVersion     string             `json:"appVersion,omitempty"`
-	SourceDeviceID string             `json:"sourceDeviceId,omitempty"`
-	SourceType     string             `json:"sourceType,omitempty"`
-	MetaDetails    MetaDetailsRequset `json:"metaDetails,omitempty"`
+type DeviceInfo struct {
+	AppVersion     string      `json:"appVersion,omitempty"`
+	SourceDeviceID string      `json:"sourceDeviceId,omitempty"`
+	SourceType     string      `json:"sourceType,omitempty"`
+	MetaDetails    MetaDetails `json:"metaDetails,omitempty"`
 }
 
-type MetaDetailsRequset struct {
+type MetaDetails struct {
 	UserAgent string `json:"userAgent,omitempty"`
 }
 
-func NewDeviceInfoRequest(deviceID string, userAgent string) DeviceInfoRequest {
-	return DeviceInfoRequest{
-		AppVersion:     defaultAppVersion,
-		SourceType:     defaultSourceType,
-		SourceDeviceID: deviceID,
-		MetaDetails: MetaDetailsRequset{
-			UserAgent: userAgent,
-		},
+func generateDeviceID() string {
+	b := make([]byte, deviceIDLength)
+	for i := range b {
+		b[i] = deviceIDCharset[rand.N(len(deviceIDCharset))]
 	}
+
+	return string(b)
 }

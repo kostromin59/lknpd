@@ -3,9 +3,9 @@ package lknpd
 import "time"
 
 type LoginRequest struct {
-	Username   string            `json:"username,omitempty"`
-	Password   string            `json:"password,omitempty"`
-	DeviceInfo DeviceInfoRequest `json:"deviceInfo,omitempty"`
+	Username   string     `json:"username,omitempty"`
+	Password   string     `json:"password,omitempty"`
+	DeviceInfo DeviceInfo `json:"deviceInfo,omitempty"`
 }
 
 type LoginResponse struct {
@@ -15,8 +15,8 @@ type LoginResponse struct {
 }
 
 type RefreshTokenRequest struct {
-	DeviceInfo   DeviceInfoRequest `json:"deviceInfo,omitempty"`
-	RefreshToken string            `json:"refreshToken,omitempty"`
+	DeviceInfo   DeviceInfo `json:"deviceInfo,omitempty"`
+	RefreshToken string     `json:"refreshToken,omitempty"`
 }
 
 type RefreshTokenResponse struct {

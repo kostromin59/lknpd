@@ -27,7 +27,7 @@ type Client struct {
 	mu *sync.RWMutex
 }
 
-// New creates new instance of [Client]. When the provided baseURL is empty, `https://lknpd.nalog.ru` will be used.
+// New creates new instance of [Client]. Use options to change baseURL and another settings
 func New(inn, password string, opts ...Option) *Client {
 	o := newOptions()
 

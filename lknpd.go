@@ -85,7 +85,7 @@ func (c *Client) CreateIncome(ctx context.Context, client IncomeClient, services
 		IgnoreMaxTotalIncomeRestrictions: false,
 		OperationTime:                    date,
 		PaymentType:                      defaultPaymentType,
-		RequestTime:                      time.Now(),
+		RequestTime:                      date,
 		Services:                         services,
 		TotalAmount:                      fmt.Sprintf("%.2f", total),
 	}
@@ -96,6 +96,26 @@ func (c *Client) CreateIncome(ctx context.Context, client IncomeClient, services
 	}
 
 	return resp.ApprovedReceiptUUID, nil
+}
+
+func (c *Client) CancelIncome(ctx context.Context, receiptUUID string, comment CancelIncomeComment) error {
+	const op = "lknpd.Client.CancelIncome"
+
+	now := time.Now()
+	body := CancelIncomeRequest{
+		Comment:       comment,
+		OperationTime: now,
+		PartnerCode:   nil,
+		ReceiptUUID:   receiptUUID,
+		RequestTime:   now,
+	}
+
+	_, err := c.Request[CancelIncomeResponse](ctx, "/api/v1/cancel", http.MethodPost, body)
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	return nil
 }
 
 func (c *Client) Request[T any](ctx context.Context, path, method string, body any) (T, error) {

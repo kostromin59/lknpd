@@ -41,3 +41,24 @@ type CreateIncomeRequest struct {
 type CreateIncomeResponse struct {
 	ApprovedReceiptUUID string `json:"approvedReceiptUuid"`
 }
+
+type CancelIncomeRequest struct {
+	Comment       CancelIncomeComment
+	OperationTime time.Time
+	PartnerCode   *string
+	ReceiptUUID   string
+	RequestTime   time.Time
+}
+
+type CancelIncomeComment string
+
+var (
+	CancelIncomeCommentMistake CancelIncomeComment = "Чек сформирован ошибочно"
+	CancelIncomeCommentRefund  CancelIncomeComment = "Возврат средств"
+)
+
+type CancelIncomeResponse struct {
+	IncomeInfo struct {
+		ApprovedReceiptUUID string `json:"approvedReceiptUuid"`
+	} `json:"incomeInfo"`
+}

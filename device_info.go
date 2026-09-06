@@ -8,14 +8,14 @@ const (
 )
 
 type DeviceInfo struct {
-	AppVersion     string      `json:"appVersion,omitempty"`
-	SourceDeviceID string      `json:"sourceDeviceId,omitempty"`
-	SourceType     string      `json:"sourceType,omitempty"`
-	MetaDetails    MetaDetails `json:"metaDetails,omitempty"`
+	AppVersion     string      `json:"appVersion"`
+	SourceDeviceID string      `json:"sourceDeviceId"`
+	SourceType     string      `json:"sourceType"`
+	MetaDetails    MetaDetails `json:"metaDetails"`
 }
 
 type MetaDetails struct {
-	UserAgent string `json:"userAgent,omitempty"`
+	UserAgent string `json:"userAgent"`
 }
 
 func generateDeviceID() string {

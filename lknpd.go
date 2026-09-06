@@ -17,6 +17,9 @@ type Client struct {
 	baseURL    string
 	deviceInfo DeviceInfo
 
+	inn      string
+	password string
+
 	token          string
 	tokenExpiresIn time.Time
 	refreshToken   string
@@ -25,7 +28,7 @@ type Client struct {
 }
 
 // New creates new instance of [Client]. When the provided baseURL is empty, `https://lknpd.nalog.ru` will be used.
-func New(opts ...option) *Client {
+func New(inn, password string, opts ...Option) *Client {
 	o := newOptions()
 
 	for _, opt := range opts {
@@ -33,8 +36,10 @@ func New(opts ...option) *Client {
 	}
 
 	return &Client{
-		c:       new(http.Client),
-		baseURL: o.baseURL,
+		inn:      inn,
+		password: password,
+		c:        new(http.Client),
+		baseURL:  o.baseURL,
 		deviceInfo: DeviceInfo{
 			AppVersion:     o.appVersion,
 			SourceDeviceID: o.deviceID,
@@ -43,17 +48,60 @@ func New(opts ...option) *Client {
 				UserAgent: o.userAgent,
 			},
 		},
-		mu: new(sync.RWMutex),
+		token:          o.token,
+		refreshToken:   o.refreshToken,
+		tokenExpiresIn: o.tokenExpiresIn,
+		mu:             new(sync.RWMutex),
 	}
 }
 
-func (c *Client) Login(ctx context.Context, inn, password string) (LoginResponse, error) {
+func (c *Client) INN() string {
+	c.mu.RLock()
+	inn := c.inn
+	c.mu.RUnlock()
+
+	return inn
+}
+
+func (c *Client) DeviceInfo() DeviceInfo {
+	c.mu.RLock()
+	deviceInfo := c.deviceInfo
+	c.mu.RUnlock()
+
+	return deviceInfo
+}
+
+func (c *Client) Token() string {
+	c.mu.RLock()
+	token := c.token
+	c.mu.RUnlock()
+
+	return token
+}
+
+func (c *Client) TokenExpiresIn() time.Time {
+	c.mu.RLock()
+	tokenExpiresIn := c.tokenExpiresIn
+	c.mu.RUnlock()
+
+	return tokenExpiresIn
+}
+
+func (c *Client) RefreshToken() string {
+	c.mu.RLock()
+	refreshToken := c.refreshToken
+	c.mu.RUnlock()
+
+	return refreshToken
+}
+
+func (c *Client) Login(ctx context.Context) (LoginResponse, error) {
 	const op = "lknpd.Client.Login"
 
 	c.mu.RLock()
 	body := LoginRequest{
-		Username:   inn,
-		Password:   password,
+		Username:   c.inn,
+		Password:   c.password,
 		DeviceInfo: c.deviceInfo,
 	}
 	c.mu.RUnlock()
@@ -82,7 +130,7 @@ func (c *Client) CreateIncome(ctx context.Context, client IncomeClient, services
 
 	body := CreateIncomeRequest{
 		Client:                           client,
-		IgnoreMaxTotalIncomeRestrictions: false,
+		IgnoreMaxTotalIncomeRestrictions: defaultIgnoreMaxTotalIncomeRestrictions,
 		OperationTime:                    date,
 		PaymentType:                      defaultPaymentType,
 		RequestTime:                      date,
@@ -90,7 +138,7 @@ func (c *Client) CreateIncome(ctx context.Context, client IncomeClient, services
 		TotalAmount:                      fmt.Sprintf("%.2f", total),
 	}
 
-	resp, err := c.Request[CreateIncomeResponse](ctx, "/api/v1/income", http.MethodPost, body)
+	resp, err := c.RequestWithAuth[CreateIncomeResponse](ctx, "/api/v1/income", http.MethodPost, body)
 	if err != nil {
 		return "", fmt.Errorf("%s: %w", op, err)
 	}
@@ -110,7 +158,7 @@ func (c *Client) CancelIncome(ctx context.Context, receiptUUID string, comment C
 		RequestTime:   now,
 	}
 
-	_, err := c.Request[CancelIncomeResponse](ctx, "/api/v1/cancel", http.MethodPost, body)
+	_, err := c.RequestWithAuth[CancelIncomeResponse](ctx, "/api/v1/cancel", http.MethodPost, body)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}
@@ -181,8 +229,23 @@ func (c *Client) Request[T any](ctx context.Context, path, method string, body a
 func (c *Client) RequestWithAuth[T any](ctx context.Context, path, method string, body any) (T, error) {
 	var zero T
 
-	if c.tokenExpiresIn.After(time.Now()) {
-		if err := c.RefreshToken(ctx); err != nil {
+	c.mu.RLock()
+	refreshToken := c.refreshToken
+	inn := c.inn
+	password := c.password
+	tokenExpiresIn := c.tokenExpiresIn
+	c.mu.RUnlock()
+
+	// Login if refresh token is empty and inn and password exists
+	if refreshToken == "" && inn != "" && password != "" {
+		if _, err := c.Login(ctx); err != nil {
+			return zero, err
+		}
+	}
+
+	// Refresh if expired
+	if tokenExpiresIn.After(time.Now()) {
+		if err := c.Refresh(ctx); err != nil {
 			return zero, err
 		}
 	}
@@ -190,8 +253,8 @@ func (c *Client) RequestWithAuth[T any](ctx context.Context, path, method string
 	return c.Request[T](ctx, path, method, body)
 }
 
-func (c *Client) RefreshToken(ctx context.Context) error {
-	const op = "lknpd.Client.RefreshToken"
+func (c *Client) Refresh(ctx context.Context) error {
+	const op = "lknpd.Client.Refresh"
 
 	c.mu.RLock()
 	body := RefreshTokenRequest{

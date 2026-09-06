@@ -3,7 +3,8 @@ package lknpd
 import "time"
 
 const (
-	defaultPaymentType = "CASH"
+	defaultPaymentType                      = "CASH"
+	defaultIgnoreMaxTotalIncomeRestrictions = false
 )
 
 type Income struct {
@@ -43,11 +44,11 @@ type CreateIncomeResponse struct {
 }
 
 type CancelIncomeRequest struct {
-	Comment       CancelIncomeComment
-	OperationTime time.Time
-	PartnerCode   *string
-	ReceiptUUID   string
-	RequestTime   time.Time
+	Comment       CancelIncomeComment `json:"comment"`
+	OperationTime time.Time           `json:"operationTime"`
+	PartnerCode   *string             `json:"partnerCode"`
+	ReceiptUUID   string              `json:"receiptUuid"`
+	RequestTime   time.Time           `json:"requestTime"`
 }
 
 type CancelIncomeComment string

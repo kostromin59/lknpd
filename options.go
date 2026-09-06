@@ -1,5 +1,7 @@
 package lknpd
 
+import "time"
+
 const (
 	defaultAppVersion = "1.0.0"
 	defaultSourceType = "WEB"
@@ -8,14 +10,17 @@ const (
 )
 
 type options struct {
-	appVersion string
-	sourceType string
-	deviceID   string
-	userAgent  string
-	baseURL    string
+	appVersion     string
+	sourceType     string
+	deviceID       string
+	userAgent      string
+	baseURL        string
+	token          string
+	refreshToken   string
+	tokenExpiresIn time.Time
 }
 
-type option func(options) options
+type Option func(options) options
 
 func newOptions() options {
 	return options{
@@ -27,37 +32,46 @@ func newOptions() options {
 	}
 }
 
-func WithAppVersion(appVersion string) option {
+func WithAppVersion(appVersion string) Option {
 	return func(o options) options {
 		o.appVersion = appVersion
 		return o
 	}
 }
 
-func WithSourceType(sourceType string) option {
+func WithSourceType(sourceType string) Option {
 	return func(o options) options {
 		o.sourceType = sourceType
 		return o
 	}
 }
 
-func WithDeviceID(deviceID string) option {
+func WithDeviceID(deviceID string) Option {
 	return func(o options) options {
 		o.deviceID = deviceID
 		return o
 	}
 }
 
-func WithUserAgent(userAgent string) option {
+func WithUserAgent(userAgent string) Option {
 	return func(o options) options {
 		o.userAgent = userAgent
 		return o
 	}
 }
 
-func WithBaseURL(baseURL string) option {
+func WithBaseURL(baseURL string) Option {
 	return func(o options) options {
 		o.baseURL = baseURL
+		return o
+	}
+}
+
+func WithTokens(token, refreshToken string, tokenExpiresIn time.Time) Option {
+	return func(o options) options {
+		o.token = token
+		o.refreshToken = refreshToken
+		o.tokenExpiresIn = tokenExpiresIn
 		return o
 	}
 }

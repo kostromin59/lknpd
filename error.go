@@ -3,7 +3,7 @@ package lknpd
 import "errors"
 
 var (
-	ErrUnauthorized = errors.New("unauthorized")
+	ErrUnauthorized = errors.New("Unauthorized")
 )
 
 type ErrorResponse struct {

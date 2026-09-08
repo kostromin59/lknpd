@@ -215,7 +215,9 @@ func (c *Client) Request[T any](ctx context.Context, path, method string, body a
 
 	// Bad Status Code
 	if resp.StatusCode > 299 {
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
 
 		var errorResponse ErrorResponse
 		if err := json.NewDecoder(resp.Body).Decode(&errorResponse); err != nil {
@@ -226,7 +228,10 @@ func (c *Client) Request[T any](ctx context.Context, path, method string, body a
 	}
 
 	if resp.Body != nil {
-		defer resp.Body.Close()
+		defer func() {
+			_ = resp.Body.Close()
+		}()
+
 		if err := json.NewDecoder(resp.Body).Decode(&responseValue); err != nil {
 			return responseValue, fmt.Errorf("%s: %w", op, err)
 		}

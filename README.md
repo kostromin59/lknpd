@@ -40,12 +40,17 @@ if err := lknpdClient.Refresh(context.TODO()); err != nil {
 Методы для создания и аннулирования чека используют метод `RequestWithAuth`, который требует наличия хотя бы одного из токенов. Если оба токена пустые, то возвращает `lknpd.ErrUnauthorized`. Если token пустой или просрочен, то он будет обновлён. Только после этого отправляет запрос.
 ```go  
 // Для физического лица
-approvedReceiptUUID, err := lknpdClient.CreateIncome(context.TODO(), lknpd.IncomeClient{
-    IncomeType: lknpd.IncomeClientTypeFromIndividual,
-}, []lknpd.Income{
-    {Name: "Услуга 1", Amount: 10, Quantity: 1},
-    {Name: "Услуга 2", Amount: 3, Quantity: 2},
-}, time.Now())
+approvedReceiptUUID, err := lknpdClient.CreateIncome(
+    context.TODO(),
+    lknpd.IncomeClient{
+        IncomeType: lknpd.IncomeClientTypeFromIndividual,
+    },
+    []lknpd.Income{
+        {Name: "Услуга 1", Amount: 10, Quantity: 1},
+        {Name: "Услуга 2", Amount: 3, Quantity: 2},
+    }, 
+    time.Now(),
+)
 if err != nil {
     panic(err)
 }
@@ -53,14 +58,19 @@ log.Printf("approvedReceiptUUID: %q", approvedReceiptUUID)
   
 
 // Для юридического лица
-approvedReceiptUUID, err = lknpdClient.CreateIncome(context.TODO(), lknpd.IncomeClient{
-    IncomeType:  lknpd.IncomeClientTypeFromLegalEntity,
-    DisplayName: new("ООО \"Рога и Копыта\""),
-    INN:         new("0123"),
-}, []lknpd.Income{
-    {Name: "Услуга 1", Amount: 10, Quantity: 1},
-    {Name: "Услуга 2", Amount: 3, Quantity: 2},
-}, time.Now())
+approvedReceiptUUID, err = lknpdClient.CreateIncome(
+    context.TODO(),
+    lknpd.IncomeClient{
+        IncomeType:  lknpd.IncomeClientTypeFromLegalEntity,
+        DisplayName: new("ООО \"Рога и Копыта\""),
+        INN:         new("0123"),
+    },
+    []lknpd.Income{
+        {Name: "Услуга 1", Amount: 10, Quantity: 1},
+        {Name: "Услуга 2", Amount: 3, Quantity: 2},
+    }, 
+    time.Now(),
+)
 if err != nil {
     panic(err)
 }

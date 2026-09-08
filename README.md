@@ -24,7 +24,8 @@ log.Printf("response: %+v", loginResponse)
 log.Printf("token: %q", lknpdClient.Token())
 log.Printf("refresh token: %q", lknpdClient.RefreshToken())
 
-// На запросы до тех пор, пока token жив. Потом необходимо пересоздать клиент с новым token, refresh token или ИНН и паролем
+// На запросы до тех пор, пока token жив. 
+// Потом необходимо пересоздать клиент с новым token, refresh token или ИНН и паролем
 lknpdClient = lknpd.New(lknpd.WithToken("token"))
 
 // Через Refresh Token при наличии

@@ -1,7 +1,5 @@
 package lknpd
 
-import "time"
-
 const (
 	defaultAppVersion = "1.0.0"
 	defaultSourceType = "WEB"
@@ -10,14 +8,15 @@ const (
 )
 
 type options struct {
-	appVersion     string
-	sourceType     string
-	deviceID       string
-	userAgent      string
-	baseURL        string
-	token          string
-	refreshToken   string
-	tokenExpiresIn time.Time
+	inn          string
+	password     string
+	appVersion   string
+	sourceType   string
+	deviceID     string
+	userAgent    string
+	baseURL      string
+	token        string
+	refreshToken string
 }
 
 type Option func(options) options
@@ -73,11 +72,26 @@ func WithBaseURL(baseURL string) Option {
 }
 
 // Default value: empty. Use login to get tokens (inn and password are required).
-func WithTokens(token, refreshToken string, tokenExpiresIn time.Time) Option {
+func WithToken(token string) Option {
 	return func(o options) options {
 		o.token = token
+		return o
+	}
+}
+
+// Default value: empty. Use login to get tokens (inn and password are required).
+func WithRefreshToken(refreshToken string) Option {
+	return func(o options) options {
 		o.refreshToken = refreshToken
-		o.tokenExpiresIn = tokenExpiresIn
+		return o
+	}
+}
+
+// Default value: empty. Required to get tokens. May be combined with tokens ([WithTokens])
+func WithCredentials(inn, password string) Option {
+	return func(o options) options {
+		o.inn = inn
+		o.password = password
 		return o
 	}
 }

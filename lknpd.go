@@ -20,15 +20,15 @@ type Client struct {
 	inn      string
 	password string
 
-	token          string
-	tokenExpiresIn time.Time
-	refreshToken   string
+	token         string
+	refreshToken  string
+	tokenExpireIn *time.Time
 
 	mu *sync.RWMutex
 }
 
 // New creates new instance of [Client]. Use options to change baseURL and another settings.
-func New(inn, password string, opts ...Option) *Client {
+func New(opts ...Option) *Client {
 	o := newOptions()
 
 	for _, opt := range opts {
@@ -36,8 +36,8 @@ func New(inn, password string, opts ...Option) *Client {
 	}
 
 	return &Client{
-		inn:      inn,
-		password: password,
+		inn:      o.inn,
+		password: o.password,
 		c:        new(http.Client),
 		baseURL:  o.baseURL,
 		deviceInfo: DeviceInfo{
@@ -48,10 +48,9 @@ func New(inn, password string, opts ...Option) *Client {
 				UserAgent: o.userAgent,
 			},
 		},
-		token:          o.token,
-		refreshToken:   o.refreshToken,
-		tokenExpiresIn: o.tokenExpiresIn,
-		mu:             new(sync.RWMutex),
+		token:        o.token,
+		refreshToken: o.refreshToken,
+		mu:           new(sync.RWMutex),
 	}
 }
 
@@ -81,12 +80,12 @@ func (c *Client) Token() string {
 	return token
 }
 
-func (c *Client) TokenExpiresIn() time.Time {
+func (c *Client) TokenExpiresIn() *time.Time {
 	c.mu.RLock()
-	tokenExpiresIn := c.tokenExpiresIn
+	tokenExpiresIn := *c.tokenExpireIn
 	c.mu.RUnlock()
 
-	return tokenExpiresIn
+	return &tokenExpiresIn
 }
 
 func (c *Client) RefreshToken() string {
@@ -116,8 +115,9 @@ func (c *Client) Login(ctx context.Context) (LoginResponse, error) {
 
 	c.mu.Lock()
 	c.token = resp.Token
-	c.tokenExpiresIn = resp.TokenExpiresIn
+	c.tokenExpireIn = &resp.TokenExpireIn
 	c.refreshToken = resp.RefreshToken
+	c.inn = resp.Profile.INN
 	c.mu.Unlock()
 
 	return resp, nil
@@ -231,32 +231,43 @@ func (c *Client) Request[T any](ctx context.Context, path, method string, body a
 	return responseValue, nil
 }
 
-// RequestWithAuth trying to login if refresh token is empty, then trying to refresh tokens if token is expired, after executes HTTP request and returns response body (use generic type).
+// RequestWithAuth requires at least token or refresh token. If token is empty or is expired it will be refreshed. If both tokens are empty returns [ErrUnauthorized]
 func (c *Client) RequestWithAuth[T any](ctx context.Context, path, method string, body any) (T, error) {
+	const op = "lknpd.RequestWithAuth"
 	var zero T
 
 	c.mu.RLock()
+	token := c.token
 	refreshToken := c.refreshToken
-	inn := c.inn
-	password := c.password
-	tokenExpiresIn := c.tokenExpiresIn
+
+	var tokenExpireIn *time.Time
+	if c.tokenExpireIn != nil {
+		tokenExpireIn = new(*c.tokenExpireIn)
+	}
 	c.mu.RUnlock()
 
-	// Login if refresh token is empty and inn and password exists
-	if refreshToken == "" && inn != "" && password != "" {
-		if _, err := c.Login(ctx); err != nil {
-			return zero, err
-		}
+	if token == "" && refreshToken == "" {
+		return zero, fmt.Errorf("%s: %w", op, ErrUnauthorized)
 	}
 
-	// Refresh if expired
-	if tokenExpiresIn.After(time.Now()) {
+	if token == "" {
 		if err := c.Refresh(ctx); err != nil {
-			return zero, err
+			return zero, fmt.Errorf("%s: %w", op, err)
 		}
 	}
 
-	return c.Request[T](ctx, path, method, body)
+	if tokenExpireIn != nil && tokenExpireIn.Before(time.Now()) {
+		if err := c.Refresh(ctx); err != nil {
+			return zero, fmt.Errorf("%s: %w", op, err)
+		}
+	}
+
+	resp, err := c.Request[T](ctx, path, method, body)
+	if err != nil {
+		return zero, fmt.Errorf("%s: %w", op, err)
+	}
+
+	return resp, nil
 }
 
 // Refresh executes HTTP request to refresh tokens.
@@ -277,7 +288,7 @@ func (c *Client) Refresh(ctx context.Context) error {
 
 	c.mu.Lock()
 	c.token = resp.Token
-	c.tokenExpiresIn = resp.TokenExpiresIn
+	c.tokenExpireIn = &resp.TokenExpireIn
 	if resp.RefreshToken != "" {
 		c.refreshToken = resp.RefreshToken
 	}

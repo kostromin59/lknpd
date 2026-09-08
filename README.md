@@ -9,14 +9,25 @@ Go-клиент для создания и аннулирования чеков
 Вход доступен с использованием ИНН и пароля, которые можно получить в ФНС или МВД на момент 2026 года.
 
 ```go
-lknpdClient := lknpd.New("inn", "password")
+// Через ИНН и пароль
+lknpdClient := lknpd.New(lknpd.WithCredentials("inn", "password"))
 loginResponse, err := lknpdClient.Login(context.TODO())
 if err != nil {
-    panic(err)
+  panic(err)
 }
 
 log.Printf("response: %+v", loginResponse)
 log.Printf("token: %q", lknpdClient.Token())
+log.Printf("refresh token: %q", lknpdClient.RefreshToken())
+
+// На запросы до тех пор, пока token жив. Потом необходимо пересоздать клиент с новым token, refresh token или ИНН и паролем
+lknpdClient = lknpd.New(lknpd.WithToken("token"))
+
+// Через Refresh Token при наличии
+lknpdClient = lknpd.New(lknpd.WithRefreshToken("refreshToken"))
+if err := lknpdClient.Refresh(context.TODO()); err != nil {
+  panic(err)
+}
 ```
 
 ## Создание и аннулирование чека

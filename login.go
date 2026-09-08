@@ -9,9 +9,15 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token          string    `json:"token"`
-	TokenExpiresIn time.Time `json:"tokenExpiresIn"`
-	RefreshToken   string    `json:"refreshToken"`
+	Token                string          `json:"token"`
+	TokenExpireIn        time.Time       `json:"tokenExpireIn"`
+	RefreshToken         string          `json:"refreshToken"`
+	RefreshTokenExpireIn time.Time       `json:"refreshTokenExpireIn"`
+	Profile              ProfileResponse `json:"profile"`
+}
+
+type ProfileResponse struct {
+	INN string `json:"inn"`
 }
 
 type RefreshTokenRequest struct {
@@ -20,7 +26,7 @@ type RefreshTokenRequest struct {
 }
 
 type RefreshTokenResponse struct {
-	Token          string    `json:"token"`
-	TokenExpiresIn time.Time `json:"tokenExpiresIn"`
-	RefreshToken   string    `json:"refreshToken"`
+	Token         string    `json:"token"`
+	TokenExpireIn time.Time `json:"tokenExpireIn"`
+	RefreshToken  string    `json:"refreshToken"`
 }

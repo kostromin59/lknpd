@@ -108,6 +108,10 @@ func (c *Client) Login(ctx context.Context) (LoginResponse, error) {
 	}
 	c.mu.RUnlock()
 
+	if body.Username == "" || body.Password == "" {
+		return LoginResponse{}, fmt.Errorf("%s: %w", op, ErrUnauthorized)
+	}
+
 	resp, err := c.Request[LoginResponse](ctx, "/api/v1/auth/lkfl", http.MethodPost, body)
 	if err != nil {
 		return LoginResponse{}, fmt.Errorf("%s: %w", op, err)
@@ -280,6 +284,10 @@ func (c *Client) Refresh(ctx context.Context) error {
 		RefreshToken: c.refreshToken,
 	}
 	c.mu.RUnlock()
+
+	if body.RefreshToken == "" {
+		return fmt.Errorf("%s: %w", op, ErrUnauthorized)
+	}
 
 	resp, err := c.Request[RefreshTokenResponse](ctx, "/api/v1/auth/token", http.MethodPost, body)
 	if err != nil {

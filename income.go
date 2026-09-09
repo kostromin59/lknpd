@@ -57,9 +57,3 @@ var (
 	CancelIncomeCommentMistake CancelIncomeComment = "Чек сформирован ошибочно"
 	CancelIncomeCommentRefund  CancelIncomeComment = "Возврат средств"
 )
-
-type CancelIncomeResponse struct {
-	IncomeInfo struct {
-		ApprovedReceiptUUID string `json:"approvedReceiptUuid"`
-	} `json:"incomeInfo"`
-}

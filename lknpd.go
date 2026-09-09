@@ -136,6 +136,24 @@ func (c *Client) Login(ctx context.Context) (LoginResponse, error) {
 	return resp, nil
 }
 
+func (c *Client) Logout(ctx context.Context) error {
+	const op = "lknpd.Client.Logout"
+
+	_, err := c.Request[any](ctx, "/api/v1/auth/esia/logout", http.MethodPost, map[string]string{"redirectUrl": "https://lknpd.nalog.ru/auth/login"})
+	if err != nil {
+		return fmt.Errorf("%s: %w", op, err)
+	}
+
+	c.mu.Lock()
+	c.refreshToken = ""
+	c.token = ""
+	c.inn = ""
+	c.tokenExpireIn = nil
+	c.mu.Unlock()
+
+	return nil
+}
+
 // CreateIncome creates income and returns ApprovedReceiptUUID.
 func (c *Client) CreateIncome(ctx context.Context, client IncomeClient, services []Income, date time.Time) (string, error) {
 	const op = "lknpd.Client.CreateIncome"
@@ -175,7 +193,7 @@ func (c *Client) CancelIncome(ctx context.Context, receiptUUID string, comment C
 		RequestTime:   now,
 	}
 
-	_, err := c.RequestWithAuth[CancelIncomeResponse](ctx, "/api/v1/cancel", http.MethodPost, body)
+	_, err := c.RequestWithAuth[any](ctx, "/api/v1/cancel", http.MethodPost, body)
 	if err != nil {
 		return fmt.Errorf("%s: %w", op, err)
 	}

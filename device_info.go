@@ -1,10 +1,15 @@
 package lknpd
 
-import "math/rand/v2"
+import (
+	"encoding/base64"
+	"encoding/json"
+	"math/rand/v2"
+	"strings"
+)
 
 const (
 	deviceIDLength  = 21
-	deviceIDCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	deviceIDCharset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_"
 )
 
 // DeviceInfo is used to identify your device in lknpd.
@@ -26,4 +31,41 @@ func GenerateDeviceID() string {
 	}
 
 	return string(b)
+}
+
+type tokenData struct {
+	Sub any `json:"sub"`
+}
+
+type tokenDataSub struct {
+	DeviceID       string `json:"deviceId"`
+	RefreshContext struct {
+		DeviceID string `json:"deviceId"`
+	} `json:"refreshContext"`
+}
+
+func getDeviceIDFromToken(token string) string {
+	parts := strings.Split(token, ".")
+	if len(parts) < 3 {
+		return ""
+	}
+
+	encodedData := parts[1]
+	b, err := base64.StdEncoding.DecodeString(encodedData)
+	if err != nil {
+		return ""
+	}
+
+	var data tokenData
+	_ = json.Unmarshal(b, &data)
+
+	var subData tokenDataSub
+	_ = json.Unmarshal([]byte(data.Sub.(string)), &subData)
+
+	deviceID := subData.DeviceID
+	if subData.RefreshContext.DeviceID != "" {
+		deviceID = subData.RefreshContext.DeviceID
+	}
+
+	return deviceID
 }

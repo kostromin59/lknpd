@@ -9,11 +9,10 @@ type LoginRequest struct {
 }
 
 type LoginResponse struct {
-	Token                string          `json:"token"`
-	TokenExpireIn        time.Time       `json:"tokenExpireIn"`
-	RefreshToken         string          `json:"refreshToken"`
-	RefreshTokenExpireIn time.Time       `json:"refreshTokenExpireIn"`
-	Profile              ProfileResponse `json:"profile"`
+	Token         string          `json:"token"`
+	TokenExpireIn time.Time       `json:"tokenExpireIn"`
+	RefreshToken  string          `json:"refreshToken"`
+	Profile       ProfileResponse `json:"profile"`
 }
 
 type ProfileResponse struct {

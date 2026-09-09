@@ -8,15 +8,17 @@ const (
 )
 
 type options struct {
-	inn          string
-	password     string
-	appVersion   string
-	sourceType   string
-	deviceID     string
-	userAgent    string
-	baseURL      string
-	token        string
-	refreshToken string
+	inn             string
+	password        string
+	appVersion      string
+	sourceType      string
+	deviceID        string
+	tokenDeviceID   string
+	refreshDeviceID string
+	userAgent       string
+	baseURL         string
+	token           string
+	refreshToken    string
 }
 
 type Option func(options) options
@@ -75,6 +77,10 @@ func WithBaseURL(baseURL string) Option {
 func WithToken(token string) Option {
 	return func(o options) options {
 		o.token = token
+
+		deviceID := getDeviceIDFromToken(token)
+		o.tokenDeviceID = deviceID
+
 		return o
 	}
 }
@@ -83,6 +89,10 @@ func WithToken(token string) Option {
 func WithRefreshToken(refreshToken string) Option {
 	return func(o options) options {
 		o.refreshToken = refreshToken
+
+		deviceID := getDeviceIDFromToken(refreshToken)
+		o.refreshDeviceID = deviceID
+
 		return o
 	}
 }

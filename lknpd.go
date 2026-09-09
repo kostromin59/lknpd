@@ -35,6 +35,15 @@ func New(opts ...Option) *Client {
 		o = opt(o)
 	}
 
+	deviceID := o.deviceID
+	if o.tokenDeviceID != "" {
+		deviceID = o.tokenDeviceID
+	}
+
+	if o.refreshDeviceID != "" {
+		deviceID = o.refreshDeviceID
+	}
+
 	return &Client{
 		inn:      o.inn,
 		password: o.password,
@@ -42,7 +51,7 @@ func New(opts ...Option) *Client {
 		baseURL:  o.baseURL,
 		deviceInfo: DeviceInfo{
 			AppVersion:     o.appVersion,
-			SourceDeviceID: o.deviceID,
+			SourceDeviceID: deviceID,
 			SourceType:     o.sourceType,
 			MetaDetails: MetaDetails{
 				UserAgent: o.userAgent,
@@ -207,6 +216,8 @@ func (c *Client) Request[T any](ctx context.Context, path, method string, body a
 	if c.token != "" {
 		req.Header.Add("Authorization", "Bearer "+c.token)
 	}
+
+	req.Header.Add("Content-Type", "application/json; charset=utf-8")
 
 	resp, err := c.c.Do(req)
 	if err != nil {

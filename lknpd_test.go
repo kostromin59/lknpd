@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -332,8 +331,21 @@ func TestLogin(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 
-		if !reflect.DeepEqual(resp, expectedResponse) {
-			t.Errorf("expected response %v but got %v", expectedResponse, resp)
+		if resp.Token != expectedResponse.Token {
+			t.Errorf("Token: expected %q but got %q", expectedResponse.Token, resp.Token)
+		}
+		if resp.RefreshToken != expectedResponse.RefreshToken {
+			t.Errorf("RefreshToken: expected %q but got %q", expectedResponse.RefreshToken, resp.RefreshToken)
+		}
+
+		if !resp.TokenExpireIn.Equal(expectedResponse.TokenExpireIn) {
+			t.Errorf("TokenExpireIn: expected %q but got %q",
+				expectedResponse.TokenExpireIn.Format(time.DateTime),
+				resp.TokenExpireIn.Format(time.DateTime))
+		}
+
+		if resp.Profile.INN != expectedResponse.Profile.INN {
+			t.Errorf("Profile.INN: expected %q but got %q", expectedResponse.Profile.INN, resp.Profile.INN)
 		}
 
 		if c.INN() != expectedINN {

@@ -170,9 +170,19 @@ func TestRequestWithAuth(t *testing.T) {
 		w.WriteHeader(http.StatusCreated)
 	})
 
-	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /token", func(w http.ResponseWriter, r *http.Request) {
 		if r.Header.Get("Authorization") != "Bearer "+expectedToken {
 			t.Errorf("expected Authorization Header %q but got %q", "Bearer "+expectedToken, r.Header.Get("Authorization"))
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("{\"status\": \"ok\"}"))
+	})
+
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+expectedNewToken {
+			t.Errorf("expected Authorization Header %q but got %q", "Bearer "+expectedNewToken, r.Header.Get("Authorization"))
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -199,7 +209,7 @@ func TestRequestWithAuth(t *testing.T) {
 			lknpd.WithToken(expectedToken),
 		)
 
-		_, err := c.RequestWithAuth[any](t.Context(), "/", http.MethodGet, nil)
+		_, err := c.RequestWithAuth[any](t.Context(), "/token", http.MethodGet, nil)
 		if err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}

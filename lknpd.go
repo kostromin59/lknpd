@@ -57,9 +57,10 @@ func New(opts ...Option) *Client {
 				UserAgent: o.userAgent,
 			},
 		},
-		token:        o.token,
-		refreshToken: o.refreshToken,
-		mu:           new(sync.RWMutex),
+		token:         o.token,
+		refreshToken:  o.refreshToken,
+		tokenExpireIn: nil,
+		mu:            new(sync.RWMutex),
 	}
 }
 
@@ -295,6 +296,7 @@ func (c *Client) RequestWithAuth[T any](ctx context.Context, path, method string
 	}
 
 	if tokenExpireIn != nil && tokenExpireIn.Before(time.Now()) {
+		println(tokenExpireIn.Format(time.DateTime))
 		if err := c.Refresh(ctx); err != nil {
 			return zero, fmt.Errorf("%s: %w", op, err)
 		}

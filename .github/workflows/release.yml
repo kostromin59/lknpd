@@ -21,7 +21,7 @@ jobs:
         run: go test -v ./... -race
 
   update-pkg-go-dev:
-    needs: test # ← только после успешных тестов
+    needs: test
     runs-on: ubuntu-latest
     steps:
       - name: Update pkg.go.dev

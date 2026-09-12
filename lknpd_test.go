@@ -1,7 +1,13 @@
 package lknpd_test
 
 import (
+	"encoding/json"
+	"errors"
+	"net/http"
+	"net/http/httptest"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/kostromin59/lknpd"
 )
@@ -118,6 +124,157 @@ func TestConstructor(t *testing.T) {
 
 		if deviceInfo.SourceDeviceID != expectedDeviceID {
 			t.Errorf("expected deviceInfo.DeviceID %q but got %q", expectedDeviceID, deviceInfo.SourceDeviceID)
+		}
+	})
+}
+
+func TestRequestWithAuth(t *testing.T) {
+	expectedRefreshToken := "refreshToken"
+	expectedToken := "token"
+
+	expectedNewRefreshToken := "newRefreshToken"
+	expectedNewToken := "newToken"
+	expectedExpireIn := time.Now().Add(5 * time.Minute)
+
+	oldRefreshToken := "oldRefreshToken"
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("POST /api/v1/auth/token", func(w http.ResponseWriter, r *http.Request) {
+		defer func() {
+			_ = r.Body.Close()
+		}()
+
+		var request lknpd.RefreshTokenRequest
+		_ = json.NewDecoder(r.Body).Decode(&request)
+
+		if request.RefreshToken == oldRefreshToken {
+			_ = json.NewEncoder(w).Encode(lknpd.RefreshTokenResponse{
+				Token:         "some",
+				TokenExpireIn: time.Now().Add(-1 * time.Hour),
+				RefreshToken:  expectedRefreshToken,
+			})
+			w.WriteHeader(http.StatusCreated)
+			return
+		}
+
+		if request.RefreshToken != expectedRefreshToken {
+			t.Errorf("expected refresh token %q but got %q", expectedRefreshToken, request.RefreshToken)
+		}
+
+		_ = json.NewEncoder(w).Encode(lknpd.RefreshTokenResponse{
+			Token:         expectedNewToken,
+			TokenExpireIn: expectedExpireIn,
+			RefreshToken:  expectedNewRefreshToken,
+		})
+		w.WriteHeader(http.StatusCreated)
+	})
+
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusOK)
+		_, _ = w.Write([]byte("{\"status\": \"ok\"}"))
+	})
+
+	mux.HandleFunc("POST /error", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		w.WriteHeader(http.StatusBadGateway)
+		_ = json.NewEncoder(w).Encode(lknpd.ErrorResponse{
+			Code:    "errorCode",
+			Message: "someMsg",
+		})
+	})
+
+	testServer := httptest.NewServer(mux)
+	defer testServer.Close()
+
+	t.Run("successful request", func(t *testing.T) {
+		c := lknpd.New(
+			lknpd.WithBaseURL(testServer.URL),
+			lknpd.WithToken(expectedToken),
+		)
+
+		_, err := c.RequestWithAuth[any](t.Context(), "/", http.MethodGet, nil)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+	})
+
+	t.Run("bad status code", func(t *testing.T) {
+		c := lknpd.New(
+			lknpd.WithBaseURL(testServer.URL),
+			lknpd.WithToken(expectedToken),
+		)
+
+		_, err := c.RequestWithAuth[any](t.Context(), "/error", http.MethodPost, nil)
+		if !strings.Contains(err.Error(), "errorCode (502): someMsg") {
+			t.Errorf("expected error %q but got %v", "errorCode (502): someMsg", err)
+		}
+	})
+
+	t.Run("unauthorized error", func(t *testing.T) {
+		c := lknpd.New(lknpd.WithBaseURL(testServer.URL))
+
+		_, err := c.RequestWithAuth[any](t.Context(), "/", http.MethodGet, nil)
+		if !errors.Is(err, lknpd.ErrUnauthorized) {
+			t.Errorf("expected lknpd.ErrUnauthorized but got %v", err)
+		}
+	})
+
+	t.Run("refresh before request", func(t *testing.T) {
+		c := lknpd.New(
+			lknpd.WithBaseURL(testServer.URL),
+			lknpd.WithRefreshToken(oldRefreshToken),
+		)
+
+		if err := c.Refresh(t.Context()); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		_, err := c.RequestWithAuth[any](t.Context(), "/", http.MethodGet, nil)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if c.Token() != expectedNewToken {
+			t.Errorf("expected c.Token %q but got %q", expectedNewToken, c.Token())
+		}
+
+		if c.RefreshToken() != expectedNewRefreshToken {
+			t.Errorf("expected c.RefreshToken %q but got %q", expectedNewRefreshToken, c.RefreshToken())
+		}
+
+		if !c.TokenExpiresIn().Equal(expectedExpireIn) {
+			t.Errorf("expected c.TokenExpireIn %q but got %q", expectedExpireIn.Format(time.DateTime), c.TokenExpiresIn().Format(time.DateTime))
+		}
+	})
+
+	t.Run("refresh before request when token expired", func(t *testing.T) {
+		c := lknpd.New(
+			lknpd.WithBaseURL(testServer.URL),
+			lknpd.WithRefreshToken(expectedRefreshToken),
+		)
+
+		if err := c.Refresh(t.Context()); err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		_, err := c.RequestWithAuth[any](t.Context(), "/", http.MethodGet, nil)
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if c.Token() != expectedNewToken {
+			t.Errorf("expected c.Token %q but got %q", expectedNewToken, c.Token())
+		}
+
+		if c.RefreshToken() != expectedNewRefreshToken {
+			t.Errorf("expected c.RefreshToken %q but got %q", expectedNewRefreshToken, c.RefreshToken())
+		}
+
+		if !c.TokenExpiresIn().Equal(expectedExpireIn) {
+			t.Errorf("expected c.TokenExpireIn %q but got %q", expectedExpireIn.Format(time.DateTime), c.TokenExpiresIn().Format(time.DateTime))
 		}
 	})
 }

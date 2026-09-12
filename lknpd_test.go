@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"strings"
 	"testing"
 	"time"
@@ -331,7 +332,7 @@ func TestLogin(t *testing.T) {
 			t.Errorf("unexpected error: %v", err)
 		}
 
-		if resp != expectedResponse {
+		if !reflect.DeepEqual(resp, expectedResponse) {
 			t.Errorf("expected response %v but got %v", expectedResponse, resp)
 		}
 

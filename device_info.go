@@ -34,7 +34,7 @@ func GenerateDeviceID() string {
 }
 
 type tokenData struct {
-	Sub any `json:"sub"`
+	Sub string `json:"sub"`
 }
 
 type tokenDataSub struct {
@@ -51,7 +51,7 @@ func getDeviceIDFromToken(token string) string {
 	}
 
 	encodedData := parts[1]
-	b, err := base64.StdEncoding.DecodeString(encodedData)
+	b, err := base64.RawURLEncoding.DecodeString(encodedData)
 	if err != nil {
 		return ""
 	}
@@ -60,7 +60,7 @@ func getDeviceIDFromToken(token string) string {
 	_ = json.Unmarshal(b, &data)
 
 	var subData tokenDataSub
-	_ = json.Unmarshal([]byte(data.Sub.(string)), &subData)
+	_ = json.Unmarshal([]byte(data.Sub), &subData)
 
 	deviceID := subData.DeviceID
 	if subData.RefreshContext.DeviceID != "" {

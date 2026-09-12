@@ -102,10 +102,12 @@ func TestConstructor(t *testing.T) {
 	})
 
 	t.Run("deviceID from refresh token", func(t *testing.T) {
+		expectedToken := "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ7XCJkZXZpY2VJZFwiOlwidGVzdFRva2VuRGV2aWNlSURcIn0iLCJleHAiOjE3ODkyMDAwMDB9.o7_wMC2Y6sIdxCQ1KMKXMNd1n85renPib2gKxRys2queUXx6qJU8BK9KhLz264LlGZzgbjuPSIzUwusY1fH5Og"
 		expectedRefreshToken := "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ7XCJyZWZyZXNoQ29udGV4dFwiOiB7XCJkZXZpY2VJZFwiOlwidGVzdFJlZnJlc2hUb2tlbkRldmljZUlEXCJ9fSIsImV4cCI6MTc4OTIwMDAwMH0.a30vwjcAr2pHwh6EPQoPV_0Vhehpj2iGLLCq3UnkiyYoxdeMHhkkBK1moJZ5LrpejeDQtL0BlSe9DrdgRSNdmA"
 		expectedDeviceID := "testRefreshTokenDeviceID"
 
 		c := lknpd.New(
+			lknpd.WithToken(expectedToken),
 			lknpd.WithRefreshToken(expectedRefreshToken),
 		)
 		deviceInfo := c.DeviceInfo()

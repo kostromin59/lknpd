@@ -171,6 +171,10 @@ func TestRequestWithAuth(t *testing.T) {
 	})
 
 	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
+		if r.Header.Get("Authorization") != "Bearer "+expectedToken {
+			t.Errorf("expected Authorization Header %q but got %q", "Bearer "+expectedToken, r.Header.Get("Authorization"))
+		}
+
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusOK)
 		_, _ = w.Write([]byte("{\"status\": \"ok\"}"))
@@ -275,6 +279,54 @@ func TestRequestWithAuth(t *testing.T) {
 
 		if !c.TokenExpiresIn().Equal(expectedExpireIn) {
 			t.Errorf("expected c.TokenExpireIn %q but got %q", expectedExpireIn.Format(time.DateTime), c.TokenExpiresIn().Format(time.DateTime))
+		}
+	})
+}
+
+func TestLogin(t *testing.T) {
+	expectedINN := "01234"
+	expectedPassword := "somePassword"
+	expectedNewRefreshToken := "newRefreshToken"
+	expectedNewToken := "newToken"
+	expectedExpireIn := time.Now().Add(5 * time.Minute).Round(0)
+
+	expectedResponse := lknpd.LoginResponse{
+		Token:         expectedNewToken,
+		RefreshToken:  expectedNewRefreshToken,
+		TokenExpireIn: expectedExpireIn,
+		Profile: lknpd.ProfileResponse{
+			INN: expectedINN,
+		},
+	}
+
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("POST /api/v1/auth/lkfl", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+
+		w.WriteHeader(http.StatusOK)
+		_ = json.NewEncoder(w).Encode(expectedResponse)
+	})
+
+	testServer := httptest.NewServer(mux)
+	defer testServer.Close()
+
+	t.Run("successful", func(t *testing.T) {
+		c := lknpd.New(
+			lknpd.WithBaseURL(testServer.URL),
+			lknpd.WithCredentials(expectedINN, expectedPassword),
+		)
+		resp, err := c.Login(t.Context())
+		if err != nil {
+			t.Errorf("unexpected error: %v", err)
+		}
+
+		if resp != expectedResponse {
+			t.Errorf("expected response %v but got %v", expectedResponse, resp)
+		}
+
+		if c.INN() != expectedINN {
+			t.Errorf("expected c.INN %q but got %q", expectedINN, c.INN())
 		}
 	})
 }

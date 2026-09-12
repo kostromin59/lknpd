@@ -1,0 +1,31 @@
+name: Release
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: "1.27"
+
+      - name: Test
+        run: go test -v ./... -race
+
+  update-pkg-go-dev:
+    needs: test # ← только после успешных тестов
+    runs-on: ubuntu-latest
+    steps:
+      - name: Update pkg.go.dev
+        run: |
+          ESCAPED_MODULE=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')
+          TAG="${{ github.event.release.tag_name }}"
+          curl -fsSL "https://proxy.golang.org/github.com/$ESCAPED_MODULE/@v/$TAG.info"

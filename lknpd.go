@@ -254,7 +254,7 @@ func (c *Client) Request[T any](ctx context.Context, path, method string, body a
 			return responseValue, fmt.Errorf("%s: %w", op, err)
 		}
 
-		return responseValue, fmt.Errorf("%s: %s (%d): %s", op, errorResponse.Code, resp.StatusCode, errorResponse.Message)
+		return responseValue, fmt.Errorf("%s: %w", op, Error{Code: errorResponse.Code, Message: errorResponse.Message, StatusCode: resp.StatusCode})
 	}
 
 	if resp.Body != nil {

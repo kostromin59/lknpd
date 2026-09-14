@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
 	"time"
 
@@ -221,9 +220,16 @@ func TestRequestWithAuth(t *testing.T) {
 			lknpd.WithToken(expectedToken),
 		)
 
+		expectedErr := lknpd.Error{
+			Code:       "errorCode",
+			Message:    "someMsg",
+			StatusCode: http.StatusBadGateway,
+		}
+
 		_, err := c.RequestWithAuth[any](t.Context(), "/error", http.MethodPost, nil)
-		if !strings.Contains(err.Error(), "errorCode (502): someMsg") {
-			t.Errorf("expected error %q but got %v", "errorCode (502): someMsg", err)
+		e, ok := errors.AsType[lknpd.Error](err)
+		if !ok || e != expectedErr {
+			t.Errorf("expected error %v but got %v", expectedErr, err)
 		}
 	})
 
